@@ -1,0 +1,874 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BEYOND SIGNAL | GSAP HERO V24</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@200;300;400&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<style>
+/*══════════════════════════════════════════════════════════════
+  DESIGN SYSTEM TOKENS / V24 / Electric Cyan
+  UI UX Pro Max → Product: Cinematic HERO
+  Audience: Design-forward professionals
+  Tone: Premium editorial, zero AI defaults
+══════════════════════════════════════════════════════════════*/
+:root {
+  /* — Color — */
+  --bg:         #03040C;
+  --ink:        #F0EFFA;
+  --signal:     #00E5C8;          /* electric cyan — unexpected premium */
+  --signal-dim: rgba(0,229,200,.12);
+  --dim:        rgba(240,239,250,.38);
+  --ghost:      rgba(240,239,250,.06);
+  /* — Type — */
+  --fd: 'Bebas Neue','Impact',sans-serif;
+  --fb: 'Outfit','Helvetica Neue',sans-serif;
+  --fm: 'DM Mono','Courier New',monospace;
+  /* — Space — */
+  --vpad: 4.2vh;
+  --hpad: 4.8vw;
+}
+
+/* ── RESET ──────────────────────────────────────────────── */
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+html, body {
+  width:100%; height:100%;
+  background:var(--bg);
+  overflow:hidden;
+  color:var(--ink);
+  -webkit-font-smoothing:antialiased;
+}
+
+/* ── CUSTOM CURSOR — pointer:fine ONLY (§9) ─────────────── */
+@media (pointer: fine) { * { cursor: none !important; } }
+#cur-dot, #cur-ring { display:none; }
+@media (pointer: fine) {
+  #cur-dot {
+    display:block; position:fixed; z-index:999;
+    width:6px; height:6px;
+    background:var(--signal); border-radius:50%;
+    top:0; left:0; transform:translate(-50%,-50%);
+    box-shadow:0 0 8px var(--signal); pointer-events:none;
+  }
+  #cur-ring {
+    display:block; position:fixed; z-index:998;
+    width:30px; height:30px;
+    border:1px solid rgba(0,229,200,.42); border-radius:50%;
+    top:0; left:0; transform:translate(-50%,-50%); pointer-events:none;
+  }
+}
+
+/* ── CANVAS PARTICLES ────────────────────────────────────── */
+#particles { position:fixed; inset:0; z-index:0; pointer-events:none; }
+
+/* ── BACKGROUND VIDEO (§4) ───────────────────────────────── */
+.media { position:fixed; inset:-4%; z-index:1; overflow:hidden; opacity:1; }
+.camera {
+  position:absolute;
+  inset:-3%;
+  will-change:transform;
+  transform-origin:center;
+}
+.media video {
+  position:absolute; inset:0; width:100%; height:100%;
+  object-fit:cover; object-position:center;
+  filter:saturate(.92) brightness(.67) contrast(1.08);
+  transform:scale(1.1); will-change:transform;
+}
+@media (max-width:768px) {
+  .media video { object-position:50% 35%; }   /* §4 mobile position */
+}
+
+/* ── OVERLAY STACK ───────────────────────────────────────── */
+/* §6: semi-transparent — must NOT crush video to black */
+.veil {
+  position:fixed; inset:0; z-index:2; pointer-events:none;
+  background:
+    radial-gradient(ellipse 80% 90% at 50% 45%, rgba(3,4,12,.10) 0%, rgba(3,4,12,.65) 100%),
+    linear-gradient(180deg,rgba(3,4,12,.50) 0%,transparent 26%,transparent 62%,rgba(3,4,12,.92) 100%);
+}
+@keyframes grain-anim {
+  0%  {transform:translate(0,0)}   20%{transform:translate(-3%,4%)}
+  40% {transform:translate(5%,-2%)}60%{transform:translate(-4%,-5%)}
+  80% {transform:translate(3%,3%)} 100%{transform:translate(-2%,-2%)}
+}
+.grain {
+  position:fixed; inset:-50%; z-index:3;
+  width:200%; height:200%; pointer-events:none; opacity:.046;
+  animation:grain-anim .4s steps(1) infinite;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='280' height='280'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.87' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size:188px;
+}
+.scanlines {
+  position:fixed; inset:0; z-index:4; pointer-events:none;
+  background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,.038) 3px,rgba(0,0,0,.038) 4px);
+}
+.scan-sweep {
+  position:fixed;
+  top:-18%;
+  bottom:-18%;
+  z-index:4;
+  width:34vw;
+  pointer-events:none;
+  opacity:0;
+  mix-blend-mode:screen;
+  filter:blur(18px);
+  will-change:transform, opacity;
+  background:linear-gradient(90deg, transparent, rgba(0,229,200,.13) 44%, rgba(222,255,250,.22) 50%, rgba(0,229,200,.08) 57%, transparent);
+  transform:skewX(-13deg);
+}
+.scan-sweep-a { left:-46vw; }
+.scan-sweep-b {
+  right:-48vw;
+  width:24vw;
+  transform:skewX(17deg);
+  background:linear-gradient(90deg, transparent, rgba(93,169,255,.06), rgba(194,255,245,.16), transparent);
+}
+.energy-drift {
+  position:fixed;
+  z-index:4;
+  left:-18vw;
+  bottom:-34vh;
+  width:70vw;
+  height:70vw;
+  max-width:980px;
+  max-height:980px;
+  border-radius:50%;
+  pointer-events:none;
+  opacity:0;
+  mix-blend-mode:screen;
+  will-change:transform, opacity;
+  background:radial-gradient(circle, rgba(0,229,200,.16), rgba(0,128,190,.06) 36%, transparent 69%);
+  filter:blur(22px);
+}
+#cglow {
+  position:fixed; z-index:5; pointer-events:none;
+  width:540px; height:540px; border-radius:50%;
+  background:radial-gradient(circle,var(--signal-dim) 0%,transparent 65%);
+  top:0; left:0; transform:translate(-50%,-50%); will-change:transform;
+}
+
+/* ── HERO LAYOUT — 100dvh (§9) ───────────────────────────── */
+#hero {
+  position:fixed; inset:0;
+  height:100dvh;              /* mobile browser-bar fix */
+  z-index:22;
+  display:grid;
+  grid-template-rows:auto 1fr auto;
+}
+
+/* TOPBAR */
+nav.topbar {
+  grid-row:1;
+  display:flex; align-items:center; justify-content:space-between;
+  padding:var(--vpad) var(--hpad) 0; opacity:0;
+}
+.tb-brand {
+  font-family:var(--fm); font-size:clamp(8px,.82vw,10px);
+  letter-spacing:.36em; color:var(--dim); text-transform:uppercase;
+}
+.tb-right { display:flex; align-items:center; gap:2.5vw; }
+.tb-item  {
+  font-family:var(--fm); font-size:clamp(7px,.72vw,9px);
+  letter-spacing:.28em; color:rgba(240,239,250,.2); text-transform:uppercase;
+}
+.tb-live  {
+  display:flex; align-items:center; gap:6px;
+  font-family:var(--fm); font-size:clamp(7px,.72vw,9px);
+  letter-spacing:.22em; color:var(--signal);
+}
+.tb-live::before {
+  content:''; width:5px; height:5px; border-radius:50%;
+  background:var(--signal); box-shadow:0 0 6px var(--signal);
+  animation:lp 2s ease infinite;
+}
+@keyframes lp { 0%,100%{opacity:1} 50%{opacity:.18} }
+
+/* STAGE — centered */
+.stage {
+  grid-row:2;
+  display:flex; flex-direction:column;
+  align-items:center; justify-content:center;
+  padding:0 var(--hpad); text-align:center;
+}
+
+/* eyebrow */
+.eyebrow { display:flex; align-items:center; gap:14px; margin-bottom:3.4vh; opacity:0; }
+.ey-rule { width:28px; height:1px; background:var(--signal); }
+.ey-txt  {
+  font-family:var(--fm); font-size:clamp(9px,.85vw,11px);
+  letter-spacing:.44em; color:var(--signal); text-transform:uppercase;
+}
+
+/* TITLE (§5, §8) */
+.tblock { position:relative; margin-bottom:3.8vh; }
+.tline  { display:block; overflow:hidden; line-height:.86; }
+.tinner {
+  display:block;
+  font-family:var(--fd);
+  font-size:clamp(60px,12vw,196px);
+  font-weight:400; letter-spacing:-.01em; text-transform:uppercase;
+  color:var(--ink); will-change:transform;
+}
+/* line 2 — outline */
+.tline:nth-child(4) .tinner {
+  color:transparent;
+  -webkit-text-stroke:1.4px rgba(240,239,250,.48);
+}
+/* line 3 — signal gradient */
+.tline:last-child .tinner {
+  background:linear-gradient(92deg,var(--ink) 0%,var(--signal) 100%);
+  -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+}
+/* glitch ghost layers */
+.tg {
+  position:absolute; inset:0; text-align:center;
+  font-family:var(--fd); font-size:clamp(60px,12vw,196px);
+  font-weight:400; letter-spacing:-.01em; text-transform:uppercase;
+  line-height:.86; pointer-events:none; opacity:0;
+}
+.tga { color:var(--signal); mix-blend-mode:screen; }
+.tgb { color:rgba(200,100,255,.65); mix-blend-mode:screen; }
+@keyframes gc1 {
+  0%,100%{clip-path:inset(0 0 96% 0);transform:translate(-4px,0)}
+  25%{clip-path:inset(20% 0 66% 0);transform:translate(3px,0)}
+  55%{clip-path:inset(58% 0 22% 0);transform:translate(-2px,0)}
+  80%{clip-path:inset(83% 0 3% 0);transform:translate(4px,0)}
+}
+@keyframes gc2 {
+  0%,100%{clip-path:inset(95% 0 0 0);transform:translate(3px,0)}
+  30%{clip-path:inset(15% 0 72% 0);transform:translate(-4px,0)}
+  65%{clip-path:inset(62% 0 18% 0);transform:translate(2px,0)}
+}
+
+/* divider */
+.hdiv {
+  width:min(480px,68vw); height:1px;
+  background:linear-gradient(90deg,transparent,var(--signal),transparent);
+  clip-path:inset(0 100% 0 0); margin-bottom:3vh;
+}
+
+/* subtitle */
+.sub-clip { overflow:hidden; margin-bottom:4.8vh; }
+.sub {
+  font-family:var(--fb); font-size:clamp(13px,1.28vw,19px);
+  font-weight:300; color:var(--dim);
+  letter-spacing:.06em; line-height:1.78; transform:translateY(112%);
+  max-width:640px;
+}
+
+/* CTA (§7 one CTA) */
+.cta-wrap { opacity:0; }
+.btn-primary {
+  display:inline-flex; align-items:center; gap:11px;
+  padding:14px 30px;
+  background:var(--signal); color:var(--bg);
+  font-family:var(--fm); font-size:clamp(9px,.9vw,11px);
+  font-weight:400; letter-spacing:.28em; text-transform:uppercase;
+  border:none; outline:none; position:relative; overflow:hidden;
+  min-height:44px; min-width:44px;    /* §9 touch target */
+}
+.btn-primary:focus-visible {          /* §9 keyboard focus */
+  outline:2px solid var(--ink); outline-offset:3px;
+}
+.btn-primary::after {
+  content:''; position:absolute; top:-2px; left:-130%;
+  width:50%; height:calc(100%+4px);
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.48),transparent);
+  transform:skewX(-20deg);
+}
+.btn-primary:hover { background:#33EDD4; }
+.btn-primary:hover::after { animation:shim .42s ease; }
+@keyframes shim { 0%{left:-130%} 100%{left:140%} }
+
+/* BOTTOM STRIP */
+.bstrip {
+  grid-row:3;
+  display:flex; align-items:center; flex-wrap:wrap; gap:3vw;
+  padding:2.2vh var(--hpad) 4.8vh;
+  border-top:1px solid var(--ghost); opacity:0;
+}
+.stat { display:flex; flex-direction:column; gap:4px; }
+.sv   { font-family:var(--fd); font-size:clamp(20px,2.2vw,36px); color:var(--ink); line-height:1; }
+.sv .ac { color:var(--signal); }
+.sl   { font-family:var(--fm); font-size:clamp(6px,.62vw,8px);
+  letter-spacing:.38em; color:rgba(240,239,250,.2); text-transform:uppercase; }
+.sep  { width:1px; height:26px; background:var(--ghost); align-self:center; }
+
+/* ── PLAY / PAUSE CONTROL (§4, §9) ──────────────────────── */
+.vid-ctrl {
+  display:inline-flex; align-items:center; gap:8px;
+  margin-left:auto;
+  padding:10px 18px;
+  border:1px solid rgba(0,229,200,.28); background:rgba(3,4,12,.7);
+  font-family:var(--fm); font-size:clamp(8px,.8vw,10px);
+  letter-spacing:.26em; color:var(--dim); text-transform:uppercase;
+  min-height:44px; min-width:44px;    /* §9 touch target */
+}
+.vid-ctrl:focus-visible { outline:2px solid var(--signal); outline-offset:3px; }
+.vid-ctrl svg { width:12px; height:12px; fill:var(--signal); flex-shrink:0; }
+.vid-ctrl:hover { border-color:var(--signal); color:var(--ink); }
+@media (max-width:768px) {
+  .vid-ctrl .vbtn-label { display:none; }  /* icon-only on mobile */
+}
+
+/* ── DECORATIONS ─────────────────────────────────────────── */
+.corner { position:fixed; z-index:24; width:42px; height:42px; opacity:0; }
+.corner svg { width:100%; height:100%; }
+.ctL { top:var(--vpad); left:3.5vw; }
+.ctR { bottom:var(--vpad); right:3.5vw; transform:rotate(180deg); }
+
+.vrule {
+  position:fixed; left:2.6vw; top:0; bottom:0; z-index:24; width:1px;
+  background:linear-gradient(180deg,transparent 0%,var(--ghost) 14%,var(--ghost) 86%,transparent 100%);
+  transform:scaleY(0); transform-origin:top;
+}
+.sind {
+  position:fixed; right:3vw; top:50%; z-index:24;
+  transform:translateY(-50%);
+  display:flex; flex-direction:column; align-items:center; gap:8px; opacity:0;
+}
+.si-t { font-family:var(--fm); font-size:8px; letter-spacing:.38em;
+  color:var(--dim); text-transform:uppercase; writing-mode:vertical-rl; }
+.si-l { width:1px; height:50px; background:var(--ghost); position:relative; overflow:hidden; }
+.si-d { position:absolute; left:0; top:-10px; width:1px; height:10px;
+  background:var(--signal); animation:sd 1.8s ease-in-out infinite; }
+@keyframes sd { 0%{top:-10px;opacity:1} 100%{top:58px;opacity:0} }
+
+/* ── TICKER ──────────────────────────────────────────────── */
+#ticker {
+  position:fixed; bottom:0; left:0; right:0; z-index:25;
+  height:36px; border-top:1px solid var(--ghost);
+  display:flex; align-items:center; overflow:hidden; opacity:0;
+}
+.tk-badge {
+  flex-shrink:0; padding:0 14px;
+  font-family:var(--fm); font-size:8px;
+  letter-spacing:.3em; color:var(--signal); text-transform:uppercase;
+  border-right:1px solid var(--ghost);
+}
+.tk-scroll {
+  flex:1; overflow:hidden;
+  -webkit-mask-image:linear-gradient(90deg,transparent,black 5%,black 95%,transparent);
+  mask-image:linear-gradient(90deg,transparent,black 5%,black 95%,transparent);
+}
+.tk-inner { display:flex; white-space:nowrap; animation:tkr 30s linear infinite; }
+@keyframes tkr { 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
+.tki { font-family:var(--fm); font-size:8px; letter-spacing:.26em;
+  color:rgba(240,239,250,.2); text-transform:uppercase; padding:0 32px; }
+.tks { color:var(--signal); opacity:.55; margin:0 4px; }
+
+/* ── PREFERS-REDUCED-MOTION (§8) ─────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .grain       { animation:none; }
+  .si-d        { animation:none; }
+  .tb-live::before { animation:none; }
+  .tk-inner    { animation:none; }
+  .scan-sweep,
+  .energy-drift { display:none; }
+}
+
+/* ── MOBILE (§9) ─────────────────────────────────────────── */
+@media (max-width:768px) {
+  :root { --vpad:3.5vh; --hpad:5.5vw; }
+  .sind   { display:none; }
+  .vrule  { display:none; }
+  .bstrip { gap:5vw; }
+}
+/* no horizontal overflow guard */
+@media (max-width:480px) {
+  .tinner { font-size:clamp(52px,18vw,120px); }
+}
+</style>
+</head>
+<body>
+
+<!-- CUSTOM CURSOR (CSS shows only on pointer:fine) -->
+<div id="cur-dot"  aria-hidden="true"></div>
+<div id="cur-ring" aria-hidden="true"></div>
+
+<!-- PARTICLES -->
+<canvas id="particles" aria-hidden="true"></canvas>
+
+<!-- BACKGROUND VIDEO (§4) -->
+<div class="media" aria-hidden="true">
+  <div class="camera">
+    <video id="bg-vid"
+      autoplay muted loop playsinline preload="auto"
+      aria-hidden="true">
+      <source src="./assets/hero-bg.mp4" type="video/mp4">
+      <source src="https://i.urusai.cc/5scWt.mp4" type="video/mp4">
+    </video>
+  </div>
+</div>
+
+<!-- OVERLAYS -->
+<div class="veil"      aria-hidden="true"></div>
+<div class="grain"     aria-hidden="true"></div>
+<div class="scanlines" aria-hidden="true"></div>
+<div class="scan-sweep scan-sweep-a" aria-hidden="true"></div>
+<div class="scan-sweep scan-sweep-b" aria-hidden="true"></div>
+<div class="energy-drift" aria-hidden="true"></div>
+<div id="cglow"        aria-hidden="true"></div>
+
+<!-- HERO -->
+<div id="hero">
+
+  <!-- semantic nav (§9) -->
+  <nav class="topbar" aria-label="頁首導覽">
+    <span class="tb-brand">Motion Design Studio / V24</span>
+    <div class="tb-right">
+      <span class="tb-item">GSAP 3.12</span>
+      <span class="tb-item">Canvas</span>
+      <span class="tb-live" aria-label="直播中">Live</span>
+    </div>
+  </nav>
+
+  <!-- semantic main (§9) -->
+  <main class="stage" aria-label="主視覺">
+
+    <div class="eyebrow" aria-hidden="true">
+      <div class="ey-rule"></div>
+      <span class="ey-txt">Cinematic Motion Design</span>
+      <div class="ey-rule"></div>
+    </div>
+
+    <!-- heading (§5 §7) -->
+    <div class="tblock" role="heading" aria-level="1" aria-label="BEYOND SIGNAL">
+      <div class="tg tga" aria-hidden="true">BEYOND<br>SIGNAL</div>
+      <div class="tg tgb" aria-hidden="true">BEYOND<br>SIGNAL</div>
+      <div class="tline"><div class="tinner">BEYOND</div></div>
+      <div class="tline"><div class="tinner">SIGNAL</div></div>
+    </div>
+
+    <div class="hdiv" aria-hidden="true"></div>
+
+    <!-- subtitle — concise (§7) -->
+    <div class="sub-clip">
+      <p class="sub">感知邊界之外，動態語言重新定義現實。</p>
+    </div>
+
+    <!-- single CTA (§7) -->
+    <div class="cta-wrap">
+      <button class="btn-primary" type="button">
+        <span>進入體驗</span>
+        <svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <path d="M3 8h10M9 4l4 4-4 4"
+            stroke="currentColor" stroke-width="1.5"
+            stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+    </div>
+
+  </main>
+
+  <!-- bottom data strip -->
+  <div class="bstrip" role="contentinfo">
+    <div class="stat">
+      <div class="sv"><span class="n60">0</span><span class="ac">fps</span></div>
+      <div class="sl">Frame Rate</div>
+    </div>
+    <div class="sep" aria-hidden="true"></div>
+    <div class="stat">
+      <div class="sv"><span class="n4k">0</span><span class="ac">K</span></div>
+      <div class="sl">Resolution</div>
+    </div>
+    <div class="sep" aria-hidden="true"></div>
+    <div class="stat">
+      <div class="sv"><span class="nms">0</span><span class="ac">ms</span></div>
+      <div class="sl">Latency</div>
+    </div>
+
+    <!-- §4 PLAY/PAUSE: updates label, icon, aria-label, aria-pressed -->
+    <button class="vid-ctrl" id="vid-toggle"
+      type="button" aria-pressed="true" aria-label="暫停影片">
+      <svg id="icon-pause" viewBox="0 0 12 12" aria-hidden="true">
+        <rect x="1"   y="1" width="3.5" height="10" rx=".8"/>
+        <rect x="7.5" y="1" width="3.5" height="10" rx=".8"/>
+      </svg>
+      <svg id="icon-play" viewBox="0 0 12 12" aria-hidden="true" hidden>
+        <path d="M2 1.5 L11 6 L2 10.5 Z"/>
+      </svg>
+      <span class="vbtn-label">暫停</span>
+    </button>
+  </div>
+
+</div><!-- /#hero -->
+
+<!-- DECORATIONS -->
+<div class="corner ctL" aria-hidden="true">
+  <svg viewBox="0 0 42 42" fill="none">
+    <path d="M0 42 L0 0 L42 0"
+      stroke="rgba(0,229,200,.55)" stroke-width="1.5"
+      stroke-dasharray="84" stroke-dashoffset="84"/>
+  </svg>
+</div>
+<div class="corner ctR" aria-hidden="true">
+  <svg viewBox="0 0 42 42" fill="none">
+    <path d="M0 42 L0 0 L42 0"
+      stroke="rgba(0,229,200,.28)" stroke-width="1.5"
+      stroke-dasharray="84" stroke-dashoffset="84"/>
+  </svg>
+</div>
+
+<div class="vrule" aria-hidden="true"></div>
+<div id="ticker" aria-hidden="true">
+  <span class="tk-badge">V24</span>
+  <div class="tk-scroll">
+    <div class="tk-inner">
+      <span class="tki">Electric Cyan<span class="tks">◆</span>Direct Earth V24<span class="tks">◆</span>100dvh<span class="tks">◆</span>Play/Pause Control<span class="tks">◆</span>Semantic HTML<span class="tks">◆</span>Keyboard Focus<span class="tks">◆</span>Reduced Motion<span class="tks">◆</span>Camera Drift<span class="tks">◆</span>Canvas Particles<span class="tks">◆</span>GSAP Timeline<span class="tks">◆</span></span>
+      <span class="tki">Electric Cyan<span class="tks">◆</span>Direct Earth V24<span class="tks">◆</span>100dvh<span class="tks">◆</span>Play/Pause Control<span class="tks">◆</span>Semantic HTML<span class="tks">◆</span>Keyboard Focus<span class="tks">◆</span>Reduced Motion<span class="tks">◆</span>Camera Drift<span class="tks">◆</span>Canvas Particles<span class="tks">◆</span>GSAP Timeline<span class="tks">◆</span></span>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ── §14 VALIDATION NOTE: node --check compatible ── */
+(function () {
+'use strict';
+
+var G       = typeof gsap !== 'undefined';
+var rm      = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+var isFine  = window.matchMedia('(pointer: fine)').matches;
+
+/* ── §9 CUSTOM CURSOR — pointer:fine only ──────────────── */
+if (G && isFine && !rm) {
+  var xDot  = gsap.quickTo('#cur-dot',  'x', { duration: .1,  ease: 'none'       });
+  var yDot  = gsap.quickTo('#cur-dot',  'y', { duration: .1,  ease: 'none'       });
+  var xRing = gsap.quickTo('#cur-ring', 'x', { duration: .42, ease: 'power2.out' });
+  var yRing = gsap.quickTo('#cur-ring', 'y', { duration: .42, ease: 'power2.out' });
+  var xGlow = gsap.quickTo('#cglow',    'x', { duration: .72, ease: 'power1.out' });
+  var yGlow = gsap.quickTo('#cglow',    'y', { duration: .72, ease: 'power1.out' });
+  /* §8 §9 parallax — pointer:fine only */
+  var xTitle = gsap.quickTo('.tblock',     'x', { duration: 2.4, ease: 'power1.out' });
+  var yTitle = gsap.quickTo('.tblock',     'y', { duration: 2.4, ease: 'power1.out' });
+  var xVid   = gsap.quickTo('.media video','x', { duration: 3.0, ease: 'power1.out' });
+  var yVid   = gsap.quickTo('.media video','y', { duration: 3.0, ease: 'power1.out' });
+
+  window.addEventListener('mousemove', function (e) {
+    xDot(e.clientX);  yDot(e.clientY);
+    xRing(e.clientX); yRing(e.clientY);
+    xGlow(e.clientX); yGlow(e.clientY);
+    var nx = (e.clientX / innerWidth  - .5) * 2;
+    var ny = (e.clientY / innerHeight - .5) * 2;
+    xTitle(nx * -12); yTitle(ny * -6);
+    xVid(nx * 8);     yVid(ny * 5);
+  }, { passive: true });
+
+  /* §9 cursor scale on hover */
+  document.querySelectorAll('button, a').forEach(function (el) {
+    el.addEventListener('mouseenter', function () { gsap.to('#cur-ring', { scale: 2.4, duration: .2 }); });
+    el.addEventListener('mouseleave', function () { gsap.to('#cur-ring', { scale: 1,   duration: .2 }); });
+  });
+}
+
+/* ── CANVAS PARTICLES ─────────────────────────────────── */
+(function () {
+  var c   = document.getElementById('particles');
+  var ctx = c.getContext('2d');
+  var W, H;
+  var SIG = [0, 229, 200];
+  var WH  = [240, 239, 250];
+
+  var pts = Array.from({ length: 92 }, function () {
+    return {
+      x:   Math.random() * 1920,
+      y:   Math.random() * 1080,
+      r:   Math.random() * 1.3 + .2,
+      vx:  (Math.random() - .5) * .2,
+      vy:  (Math.random() - .5) * .2,
+      a:   Math.random() * .2 + .04,
+      rgb: Math.random() > .74 ? SIG : WH,
+      ph:  Math.random() * Math.PI * 2
+    };
+  });
+
+  function resize() { W = c.width = innerWidth; H = c.height = innerHeight; }
+  resize();
+  window.addEventListener('resize', resize);
+
+  (function draw() {
+    ctx.clearRect(0, 0, W, H);
+    var t = Date.now() / 1000;
+    pts.forEach(function (p) {
+      p.x += p.vx; p.y += p.vy;
+      if (p.x < 0) p.x = W; else if (p.x > W) p.x = 0;
+      if (p.y < 0) p.y = H; else if (p.y > H) p.y = 0;
+      var a = p.a * (.5 + .5 * Math.sin(t + p.ph));
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(' + p.rgb[0] + ',' + p.rgb[1] + ',' + p.rgb[2] + ',' + a + ')';
+      ctx.fill();
+    });
+    requestAnimationFrame(draw);
+  }());
+}());
+
+/* ── §4 VIDEO SETUP ───────────────────────────────────── */
+var bgVid = document.getElementById('bg-vid');
+bgVid.muted = true;   /* ensure muted before play() */
+var ambientMotion = [];
+var userPausedVideo = false;
+
+function tryPlay() {
+  if (userPausedVideo) return;
+  bgVid.play().catch(function () {});
+}
+tryPlay();
+['click', 'touchstart', 'keydown'].forEach(function (evName) {
+  window.addEventListener(evName, function (event) {
+    if (event.target && event.target.closest && event.target.closest('#vid-toggle')) return;
+    tryPlay();
+  }, { once: true });
+});
+
+/* ── §4 PLAY/PAUSE CONTROL ───────────────────────────── */
+/* Updates label, icon, aria-label, aria-pressed (§4) */
+var vidToggle  = document.getElementById('vid-toggle');
+var iconPause  = document.getElementById('icon-pause');
+var iconPlay   = document.getElementById('icon-play');
+var btnLabel   = vidToggle.querySelector('.vbtn-label');
+
+vidToggle.addEventListener('click', function () {
+  if (bgVid.paused) {
+    userPausedVideo = false;
+    bgVid.play();
+    ambientMotion.forEach(function (animation) { animation.resume(); });
+    vidToggle.setAttribute('aria-pressed', 'true');
+    vidToggle.setAttribute('aria-label',   '暫停影片');
+    iconPause.hidden      = false;
+    iconPlay.hidden       = true;
+    btnLabel.textContent  = '暫停';
+  } else {
+    userPausedVideo = true;
+    bgVid.pause();
+    ambientMotion.forEach(function (animation) { animation.pause(); });
+    vidToggle.setAttribute('aria-pressed', 'false');
+    vidToggle.setAttribute('aria-label',   '播放影片');
+    iconPause.hidden      = true;
+    iconPlay.hidden       = false;
+    btnLabel.textContent  = '播放';
+  }
+});
+
+function startAmbientMotion() {
+  if (!G || rm || ambientMotion.length) return;
+
+  var mobile = window.matchMedia('(max-width: 768px)').matches;
+  var travel = mobile ? .62 : 1;
+  bgVid.playbackRate = mobile ? 2.16 : 2.32;
+
+  var camera = gsap.timeline({
+    repeat: -1,
+    defaults: { ease: 'sine.inOut', force3D: true }
+  });
+
+  camera
+    .set('.camera', {
+      xPercent: -2.8 * travel,
+      yPercent: -1.4 * travel,
+      scale: 1.08,
+      rotation: -.24 * travel
+    })
+    .to('.camera', {
+      xPercent: 2.8 * travel,
+      yPercent: 1.2 * travel,
+      scale: 1.14,
+      rotation: .2 * travel,
+      duration: 4.4
+    })
+    .to('.camera', {
+      xPercent: .3,
+      yPercent: -2.2 * travel,
+      scale: 1.18,
+      rotation: -.13 * travel,
+      duration: 3.5
+    })
+    .to('.camera', {
+      xPercent: -2.8 * travel,
+      yPercent: -1.4 * travel,
+      scale: 1.08,
+      rotation: -.24 * travel,
+      duration: 4.5
+    });
+
+  var opticalPulse = gsap.fromTo('.media video',
+    { scale: 1.04 },
+    {
+      scale: mobile ? 1.075 : 1.1,
+      duration: 5.8,
+      repeat: -1,
+      yoyo: true,
+      ease: 'sine.inOut',
+      force3D: true
+    }
+  );
+
+  var sweepA = gsap.fromTo('.scan-sweep-a',
+    { xPercent: 0, autoAlpha: 0 },
+    {
+      xPercent: 520,
+      autoAlpha: .78,
+      duration: 6.4,
+      repeat: -1,
+      repeatDelay: 2.8,
+      ease: 'power1.inOut'
+    }
+  );
+
+  var sweepB = gsap.fromTo('.scan-sweep-b',
+    { xPercent: 0, autoAlpha: 0 },
+    {
+      xPercent: -650,
+      autoAlpha: .58,
+      duration: 8.2,
+      repeat: -1,
+      repeatDelay: 3.6,
+      ease: 'power1.inOut'
+    }
+  );
+
+  var energy = gsap.fromTo('.energy-drift',
+    { xPercent: -10, yPercent: 10, scale: .86, autoAlpha: .18 },
+    {
+      xPercent: 105,
+      yPercent: -34,
+      scale: 1.28,
+      autoAlpha: .62,
+      duration: 10.5,
+      repeat: -1,
+      yoyo: true,
+      ease: 'sine.inOut',
+      force3D: true
+    }
+  );
+
+  ambientMotion.push(camera, opticalPulse, sweepA, sweepB, energy);
+}
+
+/* ── COUNTER HELPER ──────────────────────────────────── */
+function count(el, target, dur) {
+  if (!el) return;
+  if (!G)  { el.textContent = target; return; }
+  var obj = { v: 0 };
+  gsap.to(obj, {
+    v: target, duration: dur, ease: 'power3.out',
+    onUpdate: function () { el.textContent = Math.round(obj.v); }
+  });
+}
+
+/* ── §8 GLITCH (restrained — §8) ────────────────────── */
+var gBusy = false;
+function glitch() {
+  if (gBusy || rm) { schedGlitch(); return; }
+  gBusy = true;
+  var a = document.querySelector('.tga');
+  var b = document.querySelector('.tgb');
+  if (a && b) gsap.set([a, b], { opacity: 1 });
+  if (a) a.style.animation = 'gc1 .17s steps(1) 2 forwards';
+  if (b) b.style.animation = 'gc2 .13s steps(1) 2 forwards';
+  gsap.to('.tblock', {
+    x: '+=' + ((Math.random() - .5) * 9),
+    skewX: (Math.random() - .5) * 3.5,
+    duration: .06, yoyo: true, repeat: 3, ease: 'none', overwrite: 'auto',
+    onComplete: function () { gsap.set('.tblock', { skewX: 0 }); }
+  });
+  setTimeout(function () {
+    if (a && b) gsap.set([a, b], { opacity: 0 });
+    if (a) a.style.animation = 'none';
+    if (b) b.style.animation = 'none';
+    gBusy = false;
+    schedGlitch();
+  }, 300);
+}
+function schedGlitch() { setTimeout(glitch, 4000 + Math.random() * 6000); }
+
+/* ── §8 INITIAL STATES ───────────────────────────────── */
+if (G) {
+  gsap.set('.tinner',   { yPercent: 112, rotation: 2 });
+  gsap.set('.topbar',   { y: -22,  autoAlpha: 0 });
+  gsap.set('.eyebrow',  { y: -14,  autoAlpha: 0 });
+  gsap.set('.cta-wrap', { y: 20,   autoAlpha: 0 });
+  gsap.set('.bstrip',   { y: 22,   autoAlpha: 0 });
+  gsap.set(['.ctL', '.ctR'], { autoAlpha: 0 });
+  gsap.set('#ticker',   { autoAlpha: 0 });
+  gsap.set('.tg',       { opacity: 0 });
+  gsap.set('.hdiv',     { clipPath: 'inset(0 100% 0 0)' });
+  gsap.set('.sub',      { y: '112%' });
+}
+
+/* ── §8 REVEAL TIMELINE ───────────────────────────────── */
+/* §8: Timeline-based — no delay chains */
+function reveal() {
+  if (!G) {
+    document.querySelector('.media').style.opacity = '1';
+    return;
+  }
+
+  var tl = gsap.timeline({ defaults: { ease: 'power3.out' } });
+
+  tl.set('.media', { opacity: 1 }, 0);
+  tl.add(startAmbientMotion, 0);
+  tl.to('.vrule', { scaleY: 1, duration: 1.15, ease: 'power3.out' }, .18);
+  tl.to('.topbar', { y: 0, autoAlpha: 1, duration: .55 }, .32);
+  tl.to('.eyebrow', {
+    y: 0,
+    autoAlpha: 1,
+    duration: .55,
+    ease: 'back.out(1.2)'
+  }, .48);
+  tl.to('.tinner', {
+    yPercent: 0,
+    rotation: 0,
+    duration: .82,
+    stagger: .18,
+    ease: 'power4.out'
+  }, .62);
+  tl.to('.hdiv', {
+    clipPath: 'inset(0 0% 0 0)',
+    duration: .78,
+    ease: 'power3.inOut'
+  }, 1.48);
+  tl.to('.sub', { y: '0%', duration: .68 }, 1.68);
+  tl.to('.cta-wrap', {
+    y: 0,
+    autoAlpha: 1,
+    duration: .55,
+    ease: 'back.out(1.2)'
+  }, 1.88);
+  tl.to('.bstrip', { y: 0, autoAlpha: 1, duration: .58 }, 2.04);
+  tl.add(function () {
+    count(document.querySelector('.n60'), 60, 1.1);
+    count(document.querySelector('.n4k'), 4, .9);
+    count(document.querySelector('.nms'), 16, 1.0);
+  }, 2.12);
+  tl.set(['.ctL', '.ctR'], { autoAlpha: 1 }, 2.25);
+  tl.to('.corner path', {
+    strokeDashoffset: 0,
+    duration: .55,
+    stagger: .12,
+    ease: 'power2.out'
+  }, 2.25);
+  tl.to('#ticker', { autoAlpha: 1, duration: .42 }, 2.62);
+  tl.add(schedGlitch, 3.15);
+
+  gsap.to('#cglow', {
+    scale: 1.38,
+    duration: 5,
+    repeat: -1,
+    yoyo: true,
+    ease: 'sine.inOut'
+  });
+}
+
+/* Direct first frame: the blue Earth is visible before GSAP content enters. */
+reveal();
+bgVid.addEventListener('loadedmetadata', tryPlay, { once: true });
+
+}());
+</script>
+</body>
+</html>
